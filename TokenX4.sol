@@ -881,29 +881,36 @@ contract TOKENX2 is Context, BEP20, Ownable {
         emit Transfer(address(0), owner(), _tTotal);
     }
     
-    /* To receive BNB from PancakeSwapRouter when swapping */
+    /* 
+    * @dev To receive BNB from PancakeSwapRouter when swapping
+    */
     receive() external payable {}
 
-    /* Function: Returns Name of token */
-    /* Public View function */
+    /**
+     * @dev Returns the name of the token.
+     */
     function name() public pure returns (string memory) {
         return _name;
     }
 
-    /* Function: Returns Symbol of token */
-    /* Public Pure function */
+    /**
+     * @dev Returns the symbol of the token, usually a shorter version of the
+     * name.
+     */
     function symbol() public pure returns (string memory) {
         return _symbol;
     }
 
-    /* Function: Returns Decimals of token */
-    /* Public Pure function */
+    /**
+     * @dev Returns the decimals places of the token.
+     */
     function decimals() public pure returns (uint8) {
         return _decimals;
     }
 
-    /* Function: Returns Total Supply of token */
-    /* Public Pure function */
+    /**
+     * @dev See {BEP20-totalSupply}.
+     */
     function totalSupply() public pure override returns (uint256) {
         return _tTotal;
     }
