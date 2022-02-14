@@ -619,7 +619,7 @@ interface IPancakePair {
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 
-    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Mint(address indexed sender, uint amount0, uint amount1); /*NECESARIA?*/
     event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
     event Swap(
         address indexed sender,
@@ -806,8 +806,6 @@ contract TOKENX2 is Context, BEP20, Ownable {
     mapping (address => bool) private _isExcludedFromMaxTx; // ***revisar
 
     address[] private _excluded;
-    address private _DevMarketingWalletAddress = 0x4ACbaFa5DFB8268E56F66d51744A050B3569F910; //EJEMPLO ORIGINAL
-    //address private _CharityWalletAddress = 0x4ACbaFa5DFB8268E56F66d51744A050B3569F910; **CARIDAD
 
     uint256 private constant MAX = ~uint256(0);
     uint256 private constant _tTotal = 2500000 * 10 ** 9;
@@ -826,9 +824,14 @@ contract TOKENX2 is Context, BEP20, Ownable {
 
     uint256 public _devmarketingFee = 5;
     uint256 private _previousDevMarketingFee = _devmarketingFee; // Cambiar por Mraketing
+    address private _DevMarketingWalletAddress = 0x4ACbaFa5DFB8268E56F66d51744A050B3569F910; //EJEMPLO ORIGINAL
 
     //uint256 public _devmarketingFee = 5;
     //uint256 private _previousDevMarketingFee = _devmarketingFee; caridad
+    /*//address private _CharityWalletAddress = 0x4ACbaFa5DFB8268E56F66d51744A050B3569F910; **CARIDAD*/
+
+    /*uint256 public _burnFee = 3;
+    uint256 private _previousBurnFee = _burnFee;  DEFLATE TOKEN GITHUB*/
 
     uint256 public _maxTxAmount = 25000 * 10**9; //trasaccion maxcima de tokens poner en %
     uint256 private numTokensSellToAddToLiquidity = 0;
