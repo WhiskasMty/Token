@@ -834,7 +834,7 @@ contract TOKENX2 is Context, BEP20, Ownable {
     uint256 private _previousBurnFee = _burnFee;  DEFLATE TOKEN GITHUB*/
 
     uint256 public _maxTxAmount = 25000 * 10**9; //trasaccion maxcima de tokens poner en %
-    uint256 private numTokensSellToAddToLiquidity = 0;
+    uint256 private constant numTokensSellToAddToLiquidity = 0;
 
     IPancakeRouter02 public immutable pancakeRouter;
     address public immutable pancakePair;
@@ -850,6 +850,10 @@ contract TOKENX2 is Context, BEP20, Ownable {
         uint256 tokensIntoLiquidity // **CORRECION**
     );
 
+    /**
+     *@dev añadir eventos baby certik?
+     */
+
     modifier lockTheSwap() {
         inSwapAndLiquify = true;
         _;
@@ -861,28 +865,34 @@ contract TOKENX2 is Context, BEP20, Ownable {
 
         IPancakeRouter02 _pancakeRouter = IPancakeRouter02(0x10ED43C718714eb63d5aA57B78B54704E256024E); /*si lo retiro funcionara en la testnet?
         
-        /* Create a PancakeSwap Pair for this new token */
+        /**
+         *@dev Create a PancakeSwap Pair for this new token
+         */
         pancakePair = IPancakeFactory(_pancakeRouter.factory())
         .createPair(address(this), _pancakeRouter.WETH());
 
-        /* Set the rest of the contract variables */
+        /**
+         *@dev Set the rest of the contract variables 
+         */
         pancakeRouter = _pancakeRouter;
         
-        /* Exclude owner and this contract from Fee */
+        /**
+         *@dev Exclude owner and this contract from Fee
+         */
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
 
         /* Exclude from Max Fx*/ //**REVISAR**
-        _isExcludedFromMaxTx[owner()] = true;
-        _isExcludedFromMaxTx[address(this)] = true;
-        _isExcludedFromMaxTx[address(0x000000000000000000000000000000000000dEaD)] = true;
-        _isExcludedFromMaxTx[address(0)] = true;
+        _isExcludedFromMaxTx[owner()] = true;/**/
+        _isExcludedFromMaxTx[address(this)] = true;/**/
+        _isExcludedFromMaxTx[address(0x000000000000000000000000000000000000dEaD)] = true;/**/
+        _isExcludedFromMaxTx[address(0)] = true; //**
         
         emit Transfer(address(0), owner(), _tTotal);
     }
     
     /* 
-    * @dev To receive BNB from PancakeSwapRouter when swapping
+    * @dev To receive BNB from PancakeSwapRouter when swapping //correccion
     */
     receive() external payable {}
 
@@ -915,17 +925,27 @@ contract TOKENX2 is Context, BEP20, Ownable {
         return _tTotal;
     }
 
-    /*
+    /**
+     * @dev See {BEP20-balanceOf}.
+     */
     function balanceOf(address account) public view override returns (uint256) {
         if (_isExcluded[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
     }
 
+    /**
+     * @dev See {BEP20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
-
+/*
     function allowance(address owner, address spender) public view override returns (uint256) {
         return _allowances[owner][spender];
     }
@@ -954,9 +974,9 @@ contract TOKENX2 is Context, BEP20, Ownable {
     function isExcludedFromReward(address account) public view returns (bool) {
         return _isExcluded[account];
     }
-    function excludeFromReward(address account) public onlyOwner() {
+    function excludeFromReward(address account) public onlyOwner() { //external
         // require(account != 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 'We can not exclude PancakeSwap router.');
-        require(!_isExcluded[account], "Account is already excluded");
+        require(!_isExcluded[account], "Account is not excluded"); //correccion
         if(_rOwned[account] > 0) {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
         }
@@ -990,7 +1010,7 @@ contract TOKENX2 is Context, BEP20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tAmount);
     }
 
-    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) { //external***
         require(tAmount <= _tTotal, "Amount must be less than supply");
         if (!deductTransferFee) {
             (uint256 rAmount,,,,,) = _getValues(tAmount); //agregar coma
@@ -1283,7 +1303,7 @@ contract TOKENX2 is Context, BEP20, Ownable {
             tokenAmount,
             0, // slippage is unavoidable
             0, // slippage is unavoidable
-            owner(),
+            owner(),  //address(this)** or gnosis-safe.io para comprobacion multicuenta del owner
             block.timestamp
         );
     }
@@ -1299,8 +1319,8 @@ contract TOKENX2 is Context, BEP20, Ownable {
             _transferToExcluded(sender, recipient, amount);
         } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferStandard(sender, recipient, amount);
-        } else if (_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferBothExcluded(sender, recipient, amount);
+        } else if (_isExcluded[sender] && _isExcluded[recipient]) { //se puede remover**
+            _transferBothExcluded(sender, recipient, amount);       //se puede remover**
         } else {
             _transferStandard(sender, recipient, amount);
         }
