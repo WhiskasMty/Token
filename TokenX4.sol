@@ -976,7 +976,7 @@ contract TOKENX2 is Context, BEP20, Ownable {
     }
     function excludeFromReward(address account) public onlyOwner() { //external
         // require(account != 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 'We can not exclude PancakeSwap router.');
-        require(!_isExcluded[account], "Account is not excluded"); //correccion
+        require(!_isExcluded[account], "Account is already excluded"); 
         if(_rOwned[account] > 0) {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
         }
@@ -985,7 +985,7 @@ contract TOKENX2 is Context, BEP20, Ownable {
     }
 
     function includeInReward(address account) external onlyOwner() {
-        require(_isExcluded[account], "Account is already included");
+        require(_isExcluded[account], "Account is not included"); //correccion
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
                 _excluded[i] = _excluded[_excluded.length - 1];
@@ -1317,10 +1317,10 @@ contract TOKENX2 is Context, BEP20, Ownable {
             _transferFromExcluded(sender, recipient, amount);
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
             _transferToExcluded(sender, recipient, amount);
-        } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
-            _transferStandard(sender, recipient, amount);
-        } else if (_isExcluded[sender] && _isExcluded[recipient]) { //se puede remover**
-            _transferBothExcluded(sender, recipient, amount);       //se puede remover**
+        } else if (!_isExcluded[sender] && !_isExcluded[recipient]) { //se puede remover***
+            _transferStandard(sender, recipient, amount);             //se puede remover***
+        } else if (_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferBothExcluded(sender, recipient, amount);
         } else {
             _transferStandard(sender, recipient, amount);
         }
