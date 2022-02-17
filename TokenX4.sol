@@ -791,9 +791,9 @@ interface IPancakeRouter02 is IPancakeRouter01 {
 }
 
 /**
- * @dev Main Contract of TOKENX2 starts here
+ * @dev Main Contract of TOKENX5 starts here
  */
-contract TOKENX2 is Context, BEP20, Ownable {
+contract TOKENX5 is Context, BEP20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -919,33 +919,25 @@ contract TOKENX2 is Context, BEP20, Ownable {
     }
 
     /**
-     * @dev See {BEP20-totalSupply}.
+     * @dev Returns total supply of token.
      */
     function totalSupply() public pure override returns (uint256) {
         return _tTotal;
     }
 
     /**
-     * @dev See {BEP20-balanceOf}.
+     * @dev See balance of the address.
      */
     function balanceOf(address account) public view override returns (uint256) {
         if (_isExcluded[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
     }
 
-    /**
-     * @dev See {BEP20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
-/*
+
     function allowance(address owner, address spender) public view override returns (uint256) {
         return _allowances[owner][spender];
     }
@@ -971,6 +963,7 @@ contract TOKENX2 is Context, BEP20, Ownable {
         return true;
     }
 
+/*
     function isExcludedFromReward(address account) public view returns (bool) {
         return _isExcluded[account];
     }
