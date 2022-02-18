@@ -1042,10 +1042,6 @@ contract TOKENX5 is Context, BEP20, Ownable {
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
-
-
-
-
     function excludeFromFee(address account) public onlyOwner {
         _isExcludedFromFee[account] = true;
     }
@@ -1062,27 +1058,29 @@ contract TOKENX5 is Context, BEP20, Ownable {
         _liquidityFee = liquidityFee;
     }
 
-    //function setCharityFeePercent(uint256 charityFee) external onlyOwner() {
-    //    _charityFee = charityFee;
-    //}
+    function setCharityFeePercent(uint256 charityFee) external onlyOwner() {
+        _charityFee = charityFee;
+    }
 
-    //function setMarketingFeePercent(uint256 marketingFee) external onlyOwner() {
-    //    _marketingFee = marketingFee;
-    //}
+    function setMarketingFeePercent(uint256 marketingFee) external onlyOwner() {
+        _marketingFee = marketingFee;
+    }
 
     function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner() {
         _maxTxAmount = _tTotal.mul(maxTxPercent).div(
             10**2
         );
+        //emit setMaxTxPercentTX(maxTxPercent); emitir y eventos
     }
 
-    function setExcludeFromMaxTx(address _address, bool value) public onlyOwner {
-        _isExcludedFromMaxTx[_address] = value;
-    }
+    /*function setExcludeFromMaxTx(address _address, bool value) public onlyOwner {
+        _isExcludedFromMaxTx[_address] = value; 
+    } //secure moon rat
+    */
 
     function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
         swapAndLiquifyEnabled = _enabled;
-        emit SwapAndLiquifyEnabledUpdated(_enabled);
+        emit SwapAndLiquifyEnabledUpdated(_enabled); //ejemplo de emitir eventos
     }
     
     function _reflectFee(uint256 rFee, uint256 tFee) private {
@@ -1090,26 +1088,28 @@ contract TOKENX5 is Context, BEP20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getTValues(tAmount);//, uint256 tDevMarketing) = _getTValues(tAmount);
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, _getRate());//tDevMarketing, _getRate());
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity); //, tDevMarketing);
+    function _getValues(uint256 tAmount) private view returns (uint256 ,uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity) = _getTValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, tMarketing, tCharity, _getRate());
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity, tMarketing, tCharity);
     }
 
-    function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256) {
+    function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
         uint256 tFee = calculateTaxFee(tAmount);
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
-        //charity & markeitng
-        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity);//.sub(tDevMarketing);
-        return (tTransferAmount, tFee, tLiquidity);//, tDevMarketing);
+        uint256 tMarketing = calculateMarketingFee(tAmount);
+        uint256 tCharityFee = calculateCharityFee(tAmount);
+        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity).sub(tMarketing).sub(tCharityFee);
+        return (tTransferAmount, tFee, tLiquidity, tMarketing, tCharityFee);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 currentRate) private pure returns (uint256, uint256, uint256) { // uint256 tDevMarketing
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
         uint256 rLiquidity = tLiquidity.mul(currentRate);
-        //uint256 rDevMarketing = tDevMarketing.mul(currentRate);
-        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity);//.sub(rDevMarketing);
+        uint256 rMarketing = tMarketing.mul(currentRate);
+        uint256 rCharity = tCharity.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity).sub(rMarketing).sub(rCharity);
         return (rAmount, rTransferAmount, rFee);
     }
 
@@ -1138,23 +1138,30 @@ contract TOKENX5 is Context, BEP20, Ownable {
             _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
     }
 
-    // take charity
-    //function _takeLiquidity(uint256 tLiquidity) private {
-    //    uint256 currentRate = _getRate();
-    //    uint256 rLiquidity = tLiquidity.mul(currentRate);
-    //    _rOwned[address(this)] = _rOwned[address(this)].add(rLiquidity);
-    //    if (_isExcluded[address(this)])
-    //        _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
-    // }
+    function _takeMarketing(uint256 tMarketing) private {
+        uint256 currentRate =  _getRate();
+        uint256 rMarketing = tMarketing.mul(currentRate);
+        _rOwned[_MarketingWalletAddress] = _rOwned[_MarketingWalletAddress].add(rMarketing);
+        if(_isExcluded[_MarketingWalletAddress])
+            _tOwned[_MarketingWalletAddress] = _tOwned[_MarketingWalletAddress].add(tMarketing);
+    }
 
-    // take marketing
-    //function _takeLiquidity(uint256 tLiquidity) private {
-    //    uint256 currentRate = _getRate();
-    //    uint256 rLiquidity = tLiquidity.mul(currentRate);
-    //    _rOwned[address(this)] = _rOwned[address(this)].add(rLiquidity);
-    //    if (_isExcluded[address(this)])
-    //        _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
-    // }
+    function _takeCharity(uint256 tCharity) private {
+        uint256 currentRate = _getRate();
+        uint256 rCharity = tCharity.mul(currentRate);
+        _rOwned[_CharityWalletAddress] = _rOwned[_CharityWalletAddress].add(rCharity);
+        if (_isExcluded[_CharityWalletAddress])
+            _tOwned[_CharityWalletAddress] = _tOwned[_CharityWalletAddress].add(tCharity);
+    }
+
+
+
+
+
+
+
+
+
 
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
         return _amount.mul(_taxFee).div(
