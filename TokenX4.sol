@@ -803,7 +803,7 @@ contract TOKENX5 is Context, BEP20, Ownable {
 
     mapping (address => bool) private _isExcludedFromFee;
     mapping (address => bool) private _isExcluded;
-    mapping (address => bool) private _isExcludedFromMaxTx; // ***revisar
+    mapping (address => bool) private _isExcludedFromMaxTx; // ***revisar bunny
 
     address[] private _excluded;
 
@@ -822,19 +822,19 @@ contract TOKENX5 is Context, BEP20, Ownable {
     uint256 public _liquidityFee = 0;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
-    uint256 public _devmarketingFee = 5;
-    uint256 private _previousDevMarketingFee = _devmarketingFee; // Cambiar por Mraketing
-    address private _DevMarketingWalletAddress = 0x4ACbaFa5DFB8268E56F66d51744A050B3569F910; //EJEMPLO ORIGINAL
+    uint256 public _marketingFee = 5;
+    uint256 private _previousMarketingFee = _marketingFee;
+    address private _MarketingWalletAddress; // = address marketing 0x...
 
-    //uint256 public _devmarketingFee = 5;
-    //uint256 private _previousDevMarketingFee = _devmarketingFee; caridad
-    /*//address private _CharityWalletAddress = 0x4ACbaFa5DFB8268E56F66d51744A050B3569F910; **CARIDAD*/
+    uint256 public _charityFee = 5;
+    uint256 private _previousCharityFee = _charityFee;
+    address private _CharityWalletAddress;// = address charity 0x...
 
     /*uint256 public _burnFee = 3;
     uint256 private _previousBurnFee = _burnFee;  DEFLATE TOKEN GITHUB*/
 
     uint256 public _maxTxAmount = 25000 * 10**9; //trasaccion maxcima de tokens poner en %
-    uint256 private constant numTokensSellToAddToLiquidity = 0;
+    uint256 private constant numTokensSellToAddToLiquidity = 0; //tokens necesarios para vender y agregar a la liquidez
 
     IPancakeRouter02 public immutable pancakeRouter;
     address public immutable pancakePair;
@@ -852,6 +852,15 @@ contract TOKENX5 is Context, BEP20, Ownable {
 
     /**
      *@dev añadir eventos baby certik?
+     event ExcludeFromFeeEvent(bool value);
+    event IncludeInFeeEvent(bool value);
+    event SetWorthDVCFundWalletEvent(address value);
+    event SetLiquidityFeePercentEvent(uint256 value);
+    event SetWorthDVCFundFeePercentEvent(uint256 value);
+    event SetNumTokensSellToAddToLiquidityEvent(uint256 value);
+    event SetMaxTxAmountEvent(uint256 value);
+    event SetRouterAddressEvent(address value);
+    event BNBWithdrawn(address beneficiary,uint256 value);
      */
 
     modifier lockTheSwap() {
@@ -860,7 +869,7 @@ contract TOKENX5 is Context, BEP20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor () Ownable () { //Ownable ()?
+    constructor () Ownable () { //Ownable (), public?
         _rOwned[owner()] = _rTotal;
 
         IPancakeRouter02 _pancakeRouter = IPancakeRouter02(0x10ED43C718714eb63d5aA57B78B54704E256024E); /*si lo retiro funcionara en la testnet?
@@ -963,10 +972,40 @@ contract TOKENX5 is Context, BEP20, Ownable {
         return true;
     }
 
-/*
     function isExcludedFromReward(address account) public view returns (bool) {
         return _isExcluded[account];
     }
+
+    function totalFees() public view returns (uint256) {
+        return _tFeeTotal;
+    }
+
+    function deliver(uint256 tAmount) public {
+        address sender = _msgSender();
+        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
+        (uint256 rAmount,,,,,,,) = _getValues(tAmount); // comas extras por mark y char
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rTotal = _rTotal.sub(rAmount);
+        _tFeeTotal = _tFeeTotal.add(tAmount);
+    }
+
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) { //external***
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount,,,,,,,) = _getValues(tAmount); // comas extras por mark y char
+            return rAmount;
+        } else {
+            (,uint256 rTransferAmount,,,,,,) = _getValues(tAmount); // comas extras por mark y char
+            return rTransferAmount;
+        }
+    }
+
+    function tokenFromReflection(uint256 rAmount) public view returns (uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate = _getRate();
+        return rAmount.div(currentRate);
+    }
+
     function excludeFromReward(address account) public onlyOwner() { //external
         // require(account != 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 'We can not exclude PancakeSwap router.');
         require(!_isExcluded[account], "Account is already excluded"); 
@@ -990,47 +1029,22 @@ contract TOKENX5 is Context, BEP20, Ownable {
         }
     }
 
-    function totalFees() public view returns (uint256) {
-        return _tFeeTotal;
-    }
-
-    function deliver(uint256 tAmount) public {
-        address sender = _msgSender();
-        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
-        (uint256 rAmount,,,,,) = _getValues(tAmount); //agregar coma
-        _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rTotal = _rTotal.sub(rAmount);
-        _tFeeTotal = _tFeeTotal.add(tAmount);
-    }
-
-    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) { //external***
-        require(tAmount <= _tTotal, "Amount must be less than supply");
-        if (!deductTransferFee) {
-            (uint256 rAmount,,,,,) = _getValues(tAmount); //agregar coma
-            return rAmount;
-        } else {
-            (,uint256 rTransferAmount,,,,) = _getValues(tAmount); //agregar coma
-            return rTransferAmount;
-        }
-    }
-
-    function tokenFromReflection(uint256 rAmount) public view returns (uint256) {
-        require(rAmount <= _rTotal, "Amount must be less than total reflections");
-        uint256 currentRate = _getRate();
-        return rAmount.div(currentRate);
-    }
-
     function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount); //, uint256 tDevMarketing
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
         _takeLiquidity(tLiquidity);
-        //_takeDevMarketing(tDevMarketing);
+        _takeMarketing(tMarketing);
+        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
+
+
+
+
 
     function excludeFromFee(address account) public onlyOwner {
         _isExcludedFromFee[account] = true;
