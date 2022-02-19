@@ -1154,61 +1154,44 @@ contract TOKENX5 is Context, BEP20, Ownable {
             _tOwned[_CharityWalletAddress] = _tOwned[_CharityWalletAddress].add(tCharity);
     }
 
-
-
-
-
-
-
-
-
-
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_taxFee).div(
-            10 ** 2
-        );
+        return _amount.mul(_taxFee).div(10**2);
     }
 
     function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_liquidityFee).div(
-            10 ** 2
-        );
+        return _amount.mul(_liquidityFee).div(10**2);
     }
 
-    // calculate charity
-    //function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
-    //    return _amount.mul(_liquidityFee).div(
-    //        10 ** 2
-    //    );
-    //}
+    function calculateMarketingFee(uint256 _amount) private view returns (uint256) {
+        return _amount.mul(_marketingFee).div(10**2);
+    }
 
-    // calculate marketing
-    //function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
-    //    return _amount.mul(_liquidityFee).div(
-    //        10 ** 2
-    //    );
-    //}
+    function calculateCharityFee(uint256 _amount) private view returns (uint256) {
+        return _amount.mul(_charityFee).div(10**2);
+    }
 
     function removeAllFee() private {
-        if (_taxFee == 0 && _liquidityFee == 0) return;
+        if (_taxFee == 0 && _liquidityFee == 0 && _marketingFee == 0 && _charityFee == 0) return;
 
         _previousTaxFee = _taxFee;
         _previousLiquidityFee = _liquidityFee;
+        _previousMarketingFee = _marketingFee;
+        _previousCharityFee = _charityFee;
 
         _taxFee = 0;
         _liquidityFee = 0;
-        //charity
-        //marketing
+        _marketingFee = 0;
+        _charityFee = 0;
     }
 
     function restoreAllFee() private {
         _taxFee = _previousTaxFee;
         _liquidityFee = _previousLiquidityFee;
-        //charity
-        //marketing
+        _marketingFee = _previousMarketingFee;
+        _charityFee = _previousCharityFee;
     }
 
-    function isExcludedFromFee(address account) public view returns(bool) {
+    function isExcludedFromFee(address account) public view returns (bool) {
         return _isExcludedFromFee[account];
     }
 
@@ -1220,51 +1203,57 @@ contract TOKENX5 is Context, BEP20, Ownable {
         emit Approval(owner, spender, amount);
     }
 
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount
-    ) private {
-        require(from != address(0), "ERC20: transfer from the zero address");
-        require(to != address(0), "ERC20: transfer to the zero address");
+    function _transfer(address from, address to, uint256 amount) private {
+        require(from != address(0), "BEP20: transfer from the zero address");
+        require(to != address(0), "BEP20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
         if(from != owner() && to != owner())
             require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
 
-        // is the token balance of this contract address over the min number of
-        // tokens that we need to initiate a swap + liquidity lock?
-        // also, don't get caught in a circular liquidity event.
-        // also, don't swap & liquify if sender is uniswap pair.
+        /* 
+         *@dev is the token balance of this contract address over the min number of
+         *tokens that we need to initiate a swap + liquidity lock?
+         *also, don't get caught in a circular liquidity event.
+         *also, don't swap & liquify if sender is uniswap pair.
+         */
         uint256 contractTokenBalance = balanceOf(address(this));
         
-        if(contractTokenBalance >= _maxTxAmount)
-        {
+        if(contractTokenBalance >= _maxTxAmount) {
             contractTokenBalance = _maxTxAmount;
         }
         
         bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
-        if (
-            overMinTokenBalance &&
-            !inSwapAndLiquify &&
-            from != pancakePair &&
-            swapAndLiquifyEnabled
-        ) {
+        if (overMinTokenBalance && !inSwapAndLiquify && from != pancakePair && swapAndLiquifyEnabled) {
             contractTokenBalance = numTokensSellToAddToLiquidity;
-            //add liquidity
+            /*
+             *@dev Add Liquidity
+             */
             swapAndLiquify(contractTokenBalance);
         }
         
-        //indicates if fee should be deducted from transfer
+        /*
+         *@dev Indicates if fee should be deducted from transfer
+         */
         bool takeFee = true;
         
-        //if any account belongs to _isExcludedFromFee account then remove the fee
-        if(_isExcludedFromFee[from] || _isExcludedFromFee[to]){
+        /*
+         *@dev If any account belongs to _isExcludedFromFee account then remove the fee
+         */
+        if(_isExcludedFromFee[from] || _isExcludedFromFee[to]) {
             takeFee = false;
         }
         
-        //transfer amount, it will take tax, burn, liquidity fee
+        /*
+         *@dev Transfer amount, it will take tax, burn, liquidity fee
+         */
         _tokenTransfer(from,to,amount,takeFee);
     }
+
+
+
+
+
+
 
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
         // split the contract balance into halves
@@ -1376,3 +1365,34 @@ contract TOKENX5 is Context, BEP20, Ownable {
     }
 
 }
+
+//// collectBnb function can withdraw BNB from the contract,
+    // Only the Owner of the contract can call the collectBnb function
+   // function collectBnb(address account, uint256 amount) external onlyOwner {
+     //   (bool sent,) = account.call{value : amount}("");
+       // require(sent, "Unexpected error occured");
+
+     /* Internal function to Add Liquidity */
+    /*function addLiquidity(uint256 tokenAmount, uint256 bnbAmount) private {
+        /* Approve token transfer to cover all possible scenarios */
+     /*   _approve(address(this), address(uniswapV2Router), tokenAmount);
+
+     /*   /* Add the liquidity */
+       /* uniswapV2Router.addLiquidityETH{value: bnbAmount}(
+            address(this),
+            tokenAmount,
+            0, // slippage is unavoidable
+            0, // slippage is unavoidable
+            owner(),
+            block.timestamp
+        );
+        
+        // fix the forever locked BNBs
+        /**
+         * The swapAndLiquify function converts half of the tokens to BNB. 
+         * For every swapAndLiquify function call, a small amount of BNB remains in the contract. 
+         * This amount grows over time with the swapAndLiquify function being called throughout the life 
+         * of the contract. 
+         */
+  /*      withdrawableBalance = address(this).balance;
+    }*/
