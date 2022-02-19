@@ -803,7 +803,7 @@ contract TOKENX5 is Context, BEP20, Ownable {
 
     mapping (address => bool) private _isExcludedFromFee;
     mapping (address => bool) private _isExcluded;
-    mapping (address => bool) private _isExcludedFromMaxTx; // ***revisar bunny
+    //mapping (address => bool) private _isExcludedFromMaxTx; // ***revisar bunny
 
     address[] private _excluded;
 
@@ -892,10 +892,10 @@ contract TOKENX5 is Context, BEP20, Ownable {
         _isExcludedFromFee[address(this)] = true;
 
         /* Exclude from Max Fx*/ //**REVISAR**
-        _isExcludedFromMaxTx[owner()] = true;/**/
-        _isExcludedFromMaxTx[address(this)] = true;/**/
-        _isExcludedFromMaxTx[address(0x000000000000000000000000000000000000dEaD)] = true;/**/
-        _isExcludedFromMaxTx[address(0)] = true; //**
+        //_isExcludedFromMaxTx[owner()] = true;/**/
+        //_isExcludedFromMaxTx[address(this)] = true;/**/
+        //_isExcludedFromMaxTx[address(0x000000000000000000000000000000000000dEaD)] = true;/**/
+        //_isExcludedFromMaxTx[address(0)] = true; //**
         
         emit Transfer(address(0), owner(), _tTotal);
     }
@@ -1088,7 +1088,7 @@ contract TOKENX5 is Context, BEP20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function _getValues(uint256 tAmount) private view returns (uint256 ,uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+    function _getValues(uint256 tAmount) private view returns (uint256 , uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
         (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity) = _getTValues(tAmount);
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, tMarketing, tCharity, _getRate());
         return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity, tMarketing, tCharity);
@@ -1098,9 +1098,9 @@ contract TOKENX5 is Context, BEP20, Ownable {
         uint256 tFee = calculateTaxFee(tAmount);
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
         uint256 tMarketing = calculateMarketingFee(tAmount);
-        uint256 tCharityFee = calculateCharityFee(tAmount);
-        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity).sub(tMarketing).sub(tCharityFee);
-        return (tTransferAmount, tFee, tLiquidity, tMarketing, tCharityFee);
+        uint256 tCharity = calculateCharityFee(tAmount);
+        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity).sub(tMarketing).sub(tCharity);
+        return (tTransferAmount, tFee, tLiquidity, tMarketing, tCharity);
     }
 
     function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
@@ -1212,9 +1212,9 @@ contract TOKENX5 is Context, BEP20, Ownable {
 
         /* 
          *@dev is the token balance of this contract address over the min number of
-         *tokens that we need to initiate a swap + liquidity lock?
-         *also, don't get caught in a circular liquidity event.
-         *also, don't swap & liquify if sender is uniswap pair.
+         * tokens that we need to initiate a swap + liquidity lock?
+         * also, don't get caught in a circular liquidity event.
+         * also, don't swap & liquify if sender is uniswap pair.
          */
         uint256 contractTokenBalance = balanceOf(address(this));
         
@@ -1249,47 +1249,55 @@ contract TOKENX5 is Context, BEP20, Ownable {
         _tokenTransfer(from,to,amount,takeFee);
     }
 
-
-
-
-
-
-
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
-        // split the contract balance into halves
+        /*
+         *@dev Split the contract balance into halves
+         */
         uint256 half = contractTokenBalance.div(2);
         uint256 otherHalf = contractTokenBalance.sub(half);
 
-        // capture the contract's current ETH balance.
-        // this is so that we can capture exactly the amount of ETH that the
-        // swap creates, and not make the liquidity event include any ETH that
-        // has been manually sent to the contract
+        /*
+         *@dev Capture the contract's current BNB balance.
+         * this is so that we can capture exactly the amount of BNB that the
+         * swap creates, and not make the liquidity event include any BNB that
+         * has been manually sent to the contract
+        */
         uint256 initialBalance = address(this).balance;
 
-        // swap tokens for ETH
-        swapTokensForEth(half); // <- this breaks the ETH -> HATE swap when swap+liquify is triggered
+        /*
+         *@dev Swap tokens for BNB
+         */
+        swapTokensForEth(half); // <- this breaks the BNB -> MXMY swap when swap+liquify is triggered
 
-        // how much ETH did we just swap into?
+        /*
+         *@dev How much BNB did we just swap into?
+         */
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
-        // add liquidity to uniswap
+        /*
+         *@dev Add liquidity to PancakeSwap
+         */
         addLiquidity(otherHalf, newBalance);
         
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
     function swapTokensForEth(uint256 tokenAmount) private {
-        // generate the uniswap pair path of token -> weth
+        /*
+         *@dev Generate the PancakeSwap pair path of TOKEN -> WBNB
+         */
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = pancakeRouter.WETH();
 
         _approve(address(this), address(pancakeRouter), tokenAmount);
 
-        // make the swap
+        /*
+         *@dev Make the swap
+         */
         pancakeRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
             tokenAmount,
-            0, // accept any amount of ETH
+            0, /* Accept any amount of BNB*/
             path,
             address(this),
             block.timestamp
@@ -1297,10 +1305,14 @@ contract TOKENX5 is Context, BEP20, Ownable {
     }
 
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
-        // approve token transfer to cover all possible scenarios
+        /*
+         *@dev Approve token transfer to cover all possible scenarios
+         */
         _approve(address(this), address(pancakeRouter), tokenAmount);
 
-        // add the liquidity
+        /*
+         *@dev Add the liquidity
+         */
         pancakeRouter.addLiquidityETH{value: ethAmount}(
             address(this),
             tokenAmount,
@@ -1311,8 +1323,10 @@ contract TOKENX5 is Context, BEP20, Ownable {
         );
     }
 
-    //this method is responsible for taking all fee, if takeFee is true
-    function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
+    /*
+     *@dev This method is responsible for taking all fee, if takeFee is true
+     */
+    function _tokenTransfer(address sender, address recipient, uint256 amount, bool takeFee) private {
         if(!takeFee)
             removeAllFee();
         
@@ -1333,33 +1347,37 @@ contract TOKENX5 is Context, BEP20, Ownable {
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount); //, uint256 tDevMarketing
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
-        //_takeDevMarketing(tDevMarketing);
+        _takeMarketing(tMarketing);
+        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount); //, uint256 tDevMarketing
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
         _takeLiquidity(tLiquidity);
-        //_takeDevMarketing(tDevMarketing);
+        _takeMarketing(tMarketing);
+        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
+
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount); //, uint256 tDevMarketing
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tMarketing, uint256 tCharity) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
         _takeLiquidity(tLiquidity);
-        //_takeDevMarketing(tDevMarketing);
+        _takeMarketing(tMarketing);
+        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
