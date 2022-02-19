@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.9;
 
 interface BEP20 {
     /**
@@ -869,7 +869,7 @@ contract TOKENX5 is Context, BEP20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor () Ownable () { //Ownable (), public?
+    constructor () { //Ownable (), public?
         _rOwned[owner()] = _rTotal;
 
         IPancakeRouter02 _pancakeRouter = IPancakeRouter02(0x10ED43C718714eb63d5aA57B78B54704E256024E); /*si lo retiro funcionara en la testnet?
@@ -1093,6 +1093,7 @@ contract TOKENX5 is Context, BEP20, Ownable {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, tMarketing, tCharity, _getRate());
         return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity, tMarketing, tCharity);
     }
+
 
     function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
         uint256 tFee = calculateTaxFee(tAmount);
