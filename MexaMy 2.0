@@ -2,6 +2,9 @@
 
 pragma solidity 0.8.9;
 
+/**
+ * @dev Interface of the BEP20 standard.
+ */
 interface BEP20 {
     /**
      * @dev Returns the amount of tokens in existence.
