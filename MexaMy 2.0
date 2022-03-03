@@ -685,3 +685,99 @@ interface PancakeSwapRouter02 is PancakeSwapRouter01 {
     function swapExactETHForTokensSupportingFeeOnTransferTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable;
     function swapExactTokensForETHSupportingFeeOnTransferTokens( uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external;
 }
+
+contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
+    using Address for address;
+    using SafeMath for uint256;
+
+    mapping (address => uint256) private _rOwned;
+    mapping (address => uint256) private _tOwned;
+    mapping (address => mapping (address => uint256)) private _allowances;
+    
+    mapping(address => bool) private _isExcludedFromFee;
+    mapping(address => bool) private _isExcluded;
+    mapping(address => bool) private _whitelisted;
+    address[] private _excluded;
+
+    uint256 private constant MAX = ~uint256(0);
+    uint256 public constant _tTotal = 25000000 * 10 ** 9;
+    uint256 private _rTotal = (MAX - (MAX % _tTotal));
+    uint256 private _tFeeTotal;
+
+    string public constant _name = "MexaMy";
+    string public constant _symbol   = "MXMY";
+    uint256 public constant _decimals = 9;
+
+    uint256 public _taxFee = 4;
+    uint256 private _previousTaxFee = _taxFee;
+
+    uint256 public _liquidityFee = 2;
+    uint256 private _previousLiquidityFee = _liquidityFee;
+
+    uint256 public _charityFee = 2;
+    uint256 private _previousCharityFee = _charityFee;
+    address public _CharityWalletAddress = 0x4ef600B5353C7712D055C2d465A34E995654fDe1;
+
+    uint256 public constant _maxFee = 10;
+    uint256 public _maxTxAmount = 25000 * 10**9; //0.1%
+    uint256 public _maxBalance = 12500 * 10**9; //0.05
+    uint256 public _numTokensSellToAddToLiquidity = 62500 * 10**9; //0.25%
+
+    PancakeSwapRouter02 public immutable pancakeswapRouter; //inmutable??
+    address public immutable pancakeswapPair;
+
+    bool inSwapAndLiquify;
+    bool public swapAndLiquifyEnabled = true;
+
+    /*
+     *@dev Events
+     */
+    event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
+    event SwapAndLiquifyEnabledUpdated(bool enabled);
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
+    event NewFees(uint256 taxFee, uint256 liquidityFee, uint256 charityFee);
+    event NewCharityAddress(address newCharityAddress);
+    event NewMaxTxAmount(uint256 maxTxAmount);
+    event NewMaxBalance(uint256 maxBalance);
+    event NumTokensSellToAddToLiquidityEvent(uint256 amount);
+    
+    modifier lockTheSwap {
+        inSwapAndLiquify = true;
+        _;
+        inSwapAndLiquify = false;
+    }
+
+    constructor () {
+        _rOwned[owner()] = _rTotal;
+
+        PancakeSwapRouter02 _pancakeswapRouter = PancakeSwapRouter02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+
+         /**
+         *@dev Create a PancakeSwap Pair for this new token.
+         */
+        pancakeswapPair = PancakeSwapFactory(_pancakeswapRouter.factory())
+        .createPair(address(this), _pancakeswapRouter.WETH());
+
+        /**
+         *@dev Set the rest of the contract variables .
+         */
+        pancakeswapRouter = _pancakeswapRouter;
+
+        /**
+         *@dev Exclude owner and this contract from Fee.
+         */
+        _isExcludedFromFee[owner()] = true;
+        _isExcludedFromFee[address(this)] = true;
+        _isExcludedFromFee[address(_CharityWalletAddress)] = true;
+
+        /* 
+         *@dev Whitelisted.
+         */
+        _whitelisted[owner()] = true;
+        _whitelisted[address(this)] = true;
+        _whitelisted[address(_CharityWalletAddress)] = true;
+        _whitelisted[address(pancakeswapPair)] = true;
+
+        emit Transfer(address(0), owner(), _tTotal);
+    }
+}
