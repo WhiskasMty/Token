@@ -132,6 +132,7 @@ library Address {
      */
     function sendValue(address payable recipient, uint256 amount) internal {
         require(address(this).balance >= amount, "Address: insufficient balance");
+
         (bool success, ) = recipient.call{value: amount}("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
@@ -192,6 +193,7 @@ library Address {
     function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         require(isContract(target), "Address: call to non-contract");
+
         (bool success, bytes memory returndata) = target.call{value: value}(data);
         return verifyCallResult(success, returndata, errorMessage);
     }
@@ -214,6 +216,7 @@ library Address {
      */
     function functionStaticCall(address target, bytes memory data, string memory errorMessage) internal view returns (bytes memory) {
         require(isContract(target), "Address: static call to non-contract");
+
         (bool success, bytes memory returndata) = target.staticcall(data);
         return verifyCallResult(success, returndata, errorMessage);
     }
@@ -236,6 +239,7 @@ library Address {
      */
     function functionDelegateCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
         require(isContract(target), "Address: delegate call to non-contract");
+
         (bool success, bytes memory returndata) = target.delegatecall(data);
         return verifyCallResult(success, returndata, errorMessage);
     }
@@ -253,6 +257,7 @@ library Address {
             // Look for revert reason and bubble it up if present
             if (returndata.length > 0) {
                 // The easiest way to bubble the revert reason is using memory via assembly
+
                 assembly {
                     let returndata_size := mload(returndata)
                     revert(add(32, returndata), returndata_size)
@@ -571,10 +576,10 @@ abstract contract Ownable is Context {
 contract TokenRecover is Ownable {
     /**
      * @dev Remember that only owner can call so be careful when use on contracts generated from other contracts.
-     * param tokenAddress The token contract address
-     * param tokenAmount Number of tokens to be sent
+     * Param tokenAddress The token contract address.
+     * Param tokenAmount Number of tokens to be sent.
      */
-    function recoverTokens(address tokenAddress, uint256 tokenAmount) public virtual onlyOwner {
+    function recoverBEP20(address tokenAddress, uint256 tokenAmount) public onlyOwner {
         BEP20(tokenAddress).transfer(owner(), tokenAmount);
     }
 }
@@ -643,21 +648,63 @@ interface PancakeSwapRouter01 {
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
 
-    function addLiquidity(address tokenA, address tokenB, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin, address to, uint deadline)
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline)
         external returns (uint amountA, uint amountB, uint liquidity);
-    function addLiquidityETH( address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline)
+    function addLiquidityETH(
+        address token,
+        uint amountTokenDesired,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline)
         external payable returns (uint amountToken, uint amountETH, uint liquidity);
-    function removeLiquidity(address tokenA, address tokenB, uint liquidity, uint amountAMin, uint amountBMin, address to, uint deadline)
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline)
         external returns (uint amountA, uint amountB);
-    function removeLiquidityETH(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline)
+    function removeLiquidityETH(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline)
         external returns (uint amountToken, uint amountETH);
-    function removeLiquidityWithPermit(address tokenA, address tokenB, uint liquidity, uint amountAMin, uint amountBMin, address to, uint deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s)
+    function removeLiquidityWithPermit(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline,
+        bool approveMax, uint8 v, bytes32 r, bytes32 s)
         external returns (uint amountA, uint amountB);
-    function removeLiquidityETHWithPermit(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s)
+    function removeLiquidityETHWithPermit(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline,
+        bool approveMax, uint8 v, bytes32 r, bytes32 s)
         external returns (uint amountToken, uint amountETH);
-    function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
+    function swapExactTokensForTokens( uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
         external returns (uint[] memory amounts);
-    function swapTokensForExactTokens(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+    function swapTokensForExactTokens( uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
         external returns (uint[] memory amounts);
     function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
         external payable returns (uint[] memory amounts);
@@ -676,54 +723,82 @@ interface PancakeSwapRouter01 {
 }
 
 interface PancakeSwapRouter02 is PancakeSwapRouter01 {
-    function removeLiquidityETHSupportingFeeOnTransferTokens(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline)
+    function removeLiquidityETHSupportingFeeOnTransferTokens(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline)
         external returns (uint amountETH);
-    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s)
+    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline,
+        bool approveMax, uint8 v, bytes32 r, bytes32 s)
         external returns (uint amountETH);
 
-    function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external;
-    function swapExactETHForTokensSupportingFeeOnTransferTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable;
-    function swapExactTokensForETHSupportingFeeOnTransferTokens( uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external;
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline) external;
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline) external payable;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline) external;
 }
 
-contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
-    using Address for address;
+contract MexamyToken is Context, BEP20, Ownable, TokenRecover {
     using SafeMath for uint256;
+    using Address for address;
 
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
-    
+
     mapping(address => bool) private _isExcludedFromFee;
     mapping(address => bool) private _isExcluded;
-    mapping(address => bool) private _whitelisted;
+    mapping(address => bool) private _isExcludedFromMaxTx;
+    mapping(address => bool) private _isExcludedFromMaxBalance;
     address[] private _excluded;
-
+    
     uint256 private constant MAX = ~uint256(0);
-    uint256 public constant _tTotal = 25000000 * 10 ** 9;
+    uint256 public constant _tTotal = 2500000 * 10 ** 9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
     string public constant _name = "MexaMy";
     string public constant _symbol   = "MXMY";
-    uint256 public constant _decimals = 9;
+    uint8  public constant _decimals = 9;
 
-    uint256 public _taxFee = 4;
+    uint256 public _taxFee = 3;
     uint256 private _previousTaxFee = _taxFee;
 
-    uint256 public _liquidityFee = 2;
+    uint256 public _liquidityFee = 1;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
     uint256 public _charityFee = 2;
     uint256 private _previousCharityFee = _charityFee;
     address public _CharityWalletAddress = 0x4ef600B5353C7712D055C2d465A34E995654fDe1;
 
-    uint256 public constant _maxFee = 10;
-    uint256 public _maxTxAmount = 25000 * 10**9; //0.1%
-    uint256 public _maxBalance = 12500 * 10**9; //0.05
-    uint256 public _numTokensSellToAddToLiquidity = 62500 * 10**9; //0.25%
+    uint256 public constant _maxFees = 10;
+    uint256 public _maxTxAmount = 2500 * 10**9;
+    uint256 public _maxBalance = 12500 * 10 **9; 
+    uint256 public _numTokensSellToAddToLiquidity = 2000 * 10**9;
 
-    PancakeSwapRouter02 public immutable pancakeswapRouter; //inmutable??
+    PancakeSwapRouter02 public immutable pancakeswapRouter;
     address public immutable pancakeswapPair;
 
     bool inSwapAndLiquify;
@@ -771,13 +846,21 @@ contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
         _isExcludedFromFee[address(_CharityWalletAddress)] = true;
 
         /* 
-         *@dev Whitelisted.
+         *@dev Exclude from Max Tx.
          */
-        _whitelisted[owner()] = true;
-        _whitelisted[address(this)] = true;
-        _whitelisted[address(_CharityWalletAddress)] = true;
-        _whitelisted[address(pancakeswapPair)] = true;
+        _isExcludedFromMaxTx[owner()] = true;
+        _isExcludedFromMaxTx[address(this)] = true;
+        _isExcludedFromMaxTx[address(0)];
+        _isExcludedFromMaxTx[address(_CharityWalletAddress)] = true;
+
+        /*
+         *@dev Exclude from Max Balance.
+         */
+        _isExcludedFromMaxBalance[owner()] = true;
+        _isExcludedFromMaxBalance[address(this)] = true;
+        _isExcludedFromMaxBalance[address(pancakeswapPair)];
+        _isExcludedFromMaxBalance[address(_CharityWalletAddress)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
-}
+   
