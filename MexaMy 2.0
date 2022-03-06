@@ -699,14 +699,17 @@ interface PancakeSwapRouter02 is PancakeSwapRouter01 {
     function swapExactTokensForETHSupportingFeeOnTransferTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external;
 }
 
-contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
+/**
+ * @dev Implementation of BEP20 Interface.
+ */
+contract MexaMyToken is Context, BEP20, Ownable, TokenRecover {
     using Address for address;
     using SafeMath for uint256;
 
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
-    
+
     mapping(address => bool) private _isExcludedFromFee;
     mapping(address => bool) private _isExcluded;
     mapping(address => bool) private _whitelisted;
@@ -717,15 +720,21 @@ contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string public constant _name = "MexaMy";
-    string public constant _symbol   = "MXMY";
-    uint256 public constant _decimals = 9;
+    string public constant _Name = "MexaMy";
+    string public constant _Symbol   = "MXMY";
+    uint256 public constant _Decimals = 9;
 
-    uint256 public _taxFee = 4;
+     uint256 public _taxFee = 4;
     uint256 private _previousTaxFee = _taxFee;
 
     uint256 public _liquidityFee = 2;
     uint256 private _previousLiquidityFee = _liquidityFee;
+
+    /*
+    uint256 public _burnFee = 1;
+    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD; 
+    uint256 private _previousBurnFee = _burnFee;
+    */
 
     uint256 public _charityFee = 2;
     uint256 private _previousCharityFee = _charityFee;
@@ -742,8 +751,8 @@ contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
     bool inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = true;
 
-    /*
-     *@dev Events
+    /**
+     * @dev Events
      */
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
@@ -761,35 +770,35 @@ contract MexaMy-Token is BEP20, Context, Ownable, TokenRecover {
     }
 
     constructor () {
-        _rOwned[owner()] = _rTotal;
+        _rOwned[_msgSender()] = _rTotal;
 
         PancakeSwapRouter02 _pancakeswapRouter = PancakeSwapRouter02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
-         /**
-         *@dev Create a PancakeSwap Pair for this new token.
+        /**
+         * @dev Create a PancakeSwap Pair for this new token.
          */
         pancakeswapPair = PancakeSwapFactory(_pancakeswapRouter.factory())
         .createPair(address(this), _pancakeswapRouter.WETH());
 
         /**
-         *@dev Set the rest of the contract variables .
+         * @dev Set the rest of the contract variables .
          */
         pancakeswapRouter = _pancakeswapRouter;
 
         /**
-         *@dev Exclude owner and this contract from Fee.
+         * @dev Exclude owner and this contract from Fee.
          */
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
         _isExcludedFromFee[address(_CharityWalletAddress)] = true;
 
-        /* 
-         *@dev Whitelisted.
+        /**
+         * @dev Whitelisted.
          */
         _whitelisted[owner()] = true;
         _whitelisted[address(this)] = true;
         _whitelisted[address(_CharityWalletAddress)] = true;
-        _whitelisted[address(pancakeswapPair)] = true;
+        //_whitelisted[address(pancakeswapPair)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
