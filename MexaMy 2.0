@@ -802,6 +802,7 @@ contract MexaMyToken is Context, BEP20, Ownable, TokenRecover {
     address public DevelopmentWallet;
 
     uint256 public constant _maxFee = 12; //suma de todos los fees
+    uint256 public constant maxTokensBurned = 5000000 * 10**19;
     uint256 public _maxTxAmount = 25000 * 10**9; //0.1%
     uint256 public _maxBalance = 12500 * 10**9; //0.05
     uint256 public _numTokensSellToAddToLiquidity = 62500 * 10**9; //0.25%
@@ -1341,6 +1342,11 @@ contract MexaMyToken is Context, BEP20, Ownable, TokenRecover {
         if(!_isExcludedFromMaxBalance[recipient]) {
             require(balanceOf(recipient).add(amount) <= _maxBalance, "Recipient exceeds maxBalance");
         }
+	
+	uint256 Total_Burned = balanceOf(address(Burn_Address));
+	if(Total_Burned >= maxtokensBurned) {
+	    _burnFee = 0;
+	}
 
         //Calculate burn amount and development amount
         uint256 burnAmt = amount.mul(_burnFee).div(100);
