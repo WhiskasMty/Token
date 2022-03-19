@@ -852,6 +852,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         _Whitelisted[address(CharityWallet)] = true;
         _Whitelisted[address(DevelopmentWallet)] = true;
         _Whitelisted[address(Burn_Address)] = true;
+        _Whitelisted[address(pancakeswapPair)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
@@ -1262,11 +1263,6 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
             require(balanceOf(to).add(amount) <= maxBalance, "Recipient exceeds MaxBalance");
         }
 
-        uint256 tokensBurned = balanceOf(address(Burn_Address));
-        if(tokensBurned >= maxTokensBurned) {
-            burnFee = 0;
-        }
-
         /* 
          *@dev Is the token balance of this contract address over the min number of
          * tokens that we need to initiate a swap + liquidity lock?
@@ -1383,6 +1379,14 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     function _tokenTransfer(address sender, address recipient, uint256 amount) private {
         if(_isExcludedFromFee[sender] || _isExcludedFromFee[recipient]){
             removeAllFee();
+        }
+
+        /**
+         * @dev Stop Burn tokens when maxTokensBurned is reached.
+         */
+        uint256 tokensBurned = balanceOf(address(Burn_Address));
+        if(tokensBurned >= maxTokensBurned) {
+            burnFee = 0;
         }
         
         /**
