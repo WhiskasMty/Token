@@ -732,7 +732,6 @@ interface PancakeSwapRouter01 {
 /**
  * @dev Interface of PancakeSwap Router02
  */
-
 interface PancakeSwapRouter02 is PancakeSwapRouter01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline)
         external returns (uint amountETH);
@@ -745,9 +744,9 @@ interface PancakeSwapRouter02 is PancakeSwapRouter01 {
 }
 
 /**
- * @dev Implementation of BEP20 Interface.
+ * @dev MexaMy Token Smart Sontract Implementation.
  */
-contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
+contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
@@ -766,9 +765,9 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private constant _Name = "MexaMy";
-    string private constant _Symbol   = "MXMY";
-    uint256 private constant _Decimals = 9;
+    string private constant _name = "MexaMy";
+    string private constant _symbol   = "MXMY";
+    uint256 private constant _decimals = 9;
 
     uint256 public taxFee = 4;
     uint256 private _previousTaxFee = taxFee;
@@ -789,7 +788,7 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
     address public constant Burn_Address = 0x000000000000000000000000000000000000dEaD;
 
     uint256 public constant maxFee = 10;
-    uint256 public constant maxTokensBurned =  5e6 * 10**19; // 20% of total supply
+    uint256 public constant maxTokensBurned =  5e6 * 10**9; // 20% of total supply
     uint256 public maxTxAmount = 25000 * 10**9; // 0.1% of total supply
     uint256 public maxBalance = 125000 * 10**9; // 0.5% of total supply
     uint256 public numTokensSellToAddToLiquidity = 125000 * 10**9; // 0.5% of total supply
@@ -807,7 +806,7 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
     event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
     event LiquidityAdded(uint256 tokenAmount, uint256 bnbAmount);
     event SwapAndLiquifyStatus(string status);
-    event NewFees(uint256 taxFee, uint256 liquidityFee, uint256 devFee, uint256 charityFee, uint256 burnFee);
+    event NewFees(uint256 _taxFee, uint256 _liquidityFee, uint256 _devFee, uint256 _charityFee, uint256 _burnFee);
     event FeesEnabled(bool value);
     event NewMaxTxAmount(uint256 amount);
     event NewMaxBalance(uint256 amount);
@@ -852,6 +851,7 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
         _Whitelisted[address(this)] = true;
         _Whitelisted[address(CharityWallet)] = true;
         _Whitelisted[address(DevelopmentWallet)] = true;
+        _Whitelisted[address(Burn_Address)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
@@ -865,7 +865,7 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
      * @dev Returns the name of the token.
      */
     function name() public pure returns (string memory) {
-        return _Name;
+        return _name;
     }
 
     /**
@@ -873,14 +873,14 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
      * name.
      */
     function symbol() public pure returns (string memory) {
-        return _Symbol;
+        return _symbol;
     }
 
     /**
      * @dev Returns the decimals places of the token.
      */
     function decimals() public pure returns (uint256) {
-        return _Decimals;
+        return _decimals;
     }
 
     /**
@@ -1067,14 +1067,14 @@ contract MexaMyToken is Context, BEP20, Ownable , ReentrancyGuard {
         charityFee = _charityFee;
         devFee = _devFee;
         burnFee = _burnFee;
-        emit NewFees(_taxFee, _liquidityFee, charityFee, _devFee, _burnFee);
+        emit NewFees(_taxFee, _liquidityFee, _charityFee, _devFee, _burnFee);
     }
 
     function removeAllFee() private {
         taxFee = 0;
         liquidityFee = 0;
-        devFee = 0;
         charityFee = 0;
+        devFee = 0;
         burnFee = 0;
     }
     
