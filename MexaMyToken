@@ -1184,6 +1184,10 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         return _tFeeTotal;
     }
 
+    function totalBurned() external view returns (uint256) {
+		return balanceOf(Burn_Address);
+	}
+
     /**
      * @dev The MexaMy Team may exclude certain accounts from the fees.
      */   
@@ -1462,8 +1466,4 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     function recoverTokens(address tokenAddress, uint256 tokenAmount) external onlyOwner nonReentrant {
         BEP20(tokenAddress).transfer(CharityWallet, tokenAmount);
     }
-
-    function totalBurned() external view returns (uint256) {
-		return balanceOf(Burn_Address);
-	}
 }
