@@ -761,7 +761,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     address[] private _excluded;
 
     uint256 private constant MAX = ~uint256(0);
-    uint256 private constant _tTotal = 25000000 * 10 ** 9;
+    uint256 private constant _tTotal = 25e6 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
@@ -787,11 +787,11 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _previousBurnFee = burnFee;
     address public constant Burn_Address = 0x000000000000000000000000000000000000dEaD;
 
-    uint256 public constant maxFee = 10;
+    uint256 public constant maxFee = 10; // taxFee + liquidtyFee + charityfee + devFee + burnFee <= 10
     uint256 public constant maxTokensBurned =  5e6 * 10**9; // 20% of total supply
-    uint256 public maxTxAmount = 25000 * 10**9; // 0.1% of total supply
-    uint256 public maxBalance = 125000 * 10**9; // 0.5% of total supply
-    uint256 public numTokensSellToAddToLiquidity = 125000 * 10**9; // 0.5% of total supply
+    uint256 public maxTxAmount = 25e3 * 10**9; // 0.1% of total supply
+    uint256 public maxBalance = 125e3 * 10**9; // 0.5% of total supply
+    uint256 public numTokensSellToAddToLiquidity = 125e3 * 10**9; // 0.5% of total supply
 
     PancakeSwapRouter02 public immutable pancakeswapRouter;
     address public immutable pancakeswapPair;
@@ -806,13 +806,18 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
     event LiquidityAdded(uint256 tokenAmount, uint256 bnbAmount);
     event SwapAndLiquifyStatus(string status);
-    event NewFees(uint256 _taxFee, uint256 _liquidityFee, uint256 _devFee, uint256 _charityFee, uint256 _burnFee);
+    event ExcludeFromFee(address account, bool value);
+    event IncludeInFee(address account, bool value);
+    event NewFees(uint256 _taxfee, uint256 _liquidityFee, uint256 _devFee, uint256 _charityFee, uint256 _burnFee);
     event FeesEnabled(bool value);
     event NewMaxTxAmount(uint256 amount);
     event NewMaxBalance(uint256 amount);
     event NewCharityWallet(address newCharityWallet);
     event NewDevWallet(address newDevWallet);
     event NumTokensSellToAddToLiquidity(uint256 amount);
+    event WhitelistedUptaded(address account, bool value);
+    event BlacklistedUpdated(address account, bool value);
+    event RecoverTokens(uint256 tokenAmount);
    
     modifier lockTheSwap {
         inSwapAndLiquify = true;
@@ -1194,6 +1199,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */   
     function excludeFromFee(address account) external onlyOwner {
         _isExcludedFromFee[account] = true;
+        emit ExcludeFromFee(account, true);
     }
 
      /**
@@ -1201,6 +1207,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */           
     function includeInFee(address account) external onlyOwner {
         _isExcludedFromFee[account] = false;
+        emit IncludeInFee(account, true);
     }
 
     function isExcludedFromFee(address account) external view returns(bool) {
@@ -1212,6 +1219,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */
     function addToWhitelist(address account) external onlyOwner {
         _Whitelisted[account] = true;
+        emit WhitelistedUptaded(account, true);
     }
 
     /**
@@ -1219,6 +1227,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */
     function revomeToWhitelist(address account) external onlyOwner {
         _Whitelisted[account] = false;
+        emit WhitelistedUptaded(account, false);
     }
 
     function Whitelisted(address account) external view returns(bool) {
@@ -1230,6 +1239,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */
     function addToBlacklist(address account) external onlyOwner {
         _Blacklisted[account] =true;
+        emit BlacklistedUpdated(account, true);
     }
 
     
@@ -1238,6 +1248,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */
     function removeToBlacklist(address account) external onlyOwner {
         _Blacklisted[account] = false;
+        emit BlacklistedUpdated(account, false);
     }
 
     function Blacklisted(address account) external view returns(bool) {
@@ -1392,17 +1403,17 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         /**
          * @dev Calculate Development Amount && Burn Amount.
          */
-        uint256 burnAmt = amount.mul(burnFee).div(100);
         uint256 devAmt = amount.mul(devFee).div(100);
-
+        uint256 burnAmt = amount.mul(burnFee).div(100);
+        
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
-            _transferFromExcluded(sender, recipient, (amount.sub(burnAmt).sub(devAmt)));
+            _transferFromExcluded(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferToExcluded(sender, recipient, (amount.sub(burnAmt).sub(devAmt)));
+            _transferToExcluded(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
         } else if (_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferBothExcluded(sender, recipient, (amount.sub(burnAmt).sub(devAmt)));
+            _transferBothExcluded(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
         } else {
-            _transferStandard(sender, recipient, (amount.sub(burnAmt).sub(devAmt)));
+            _transferStandard(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
         }
         
         /**
@@ -1415,8 +1426,9 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         /**
          * @dev Send transfers to Development Wallet and Burn Address.
          */
-        _transferStandard(sender, Burn_Address, burnAmt);
         _transferStandard(sender, DevelopmentWallet, devAmt);
+        _transferStandard(sender, Burn_Address, burnAmt);
+        
 
         /**
          * @dev Restore tax, liquidity and charity.
@@ -1469,5 +1481,6 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      */
     function recoverTokens(address tokenAddress, uint256 tokenAmount) external onlyOwner nonReentrant {
         BEP20(tokenAddress).transfer(CharityWallet, tokenAmount);
+        emit RecoverTokens(tokenAmount);
     }
 }
