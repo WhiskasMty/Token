@@ -746,7 +746,7 @@ interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
 /**
  * @dev Implementation of the Smart Contract for the MexaMy token.
  */
-contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
+contract TokenF is BEP20, Context, Ownable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
@@ -765,25 +765,25 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private constant _name = "MexaMy";
-    string private constant _symbol   = "MXMY";
+    string private constant _name = "TokenF";
+    string private constant _symbol   = "TKF";
     uint256 private constant _decimals = 9;
 
-    uint256 private taxFee = 4;
+    uint256 public taxFee = 4;
     uint256 private _previousTaxFee = taxFee;
 
-    uint256 private liquidityFee = 1;
+    uint256 public liquidityFee = 1;
     uint256 private _previousLiquidityFee = liquidityFee;
 
-    uint256 private charityFee = 1;
+    uint256 public charityFee = 1;
     uint256 private _previousCharityFee = charityFee;
     address public CharityWallet = 0x4ef600B5353C7712D055C2d465A34E995654fDe1;
 
-    uint256 private devFee = 1;
+    uint256 public devFee = 1;
     uint256 private _previousDevFee = devFee;
     address public DevelopmentWallet = 0x507338357031cA783508c13A963C56D48217d2B0;
 
-    uint256 private burnFee = 2; 
+    uint256 public burnFee = 2; 
     uint256 private _previousBurnFee = burnFee;
     address public constant Burn_Address = 0x000000000000000000000000000000000000dEaD;
 
@@ -937,10 +937,10 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) external view returns(uint256) {
         require(tAmount <= _tTotal, "Amount must be less than supply");
         if (!deductTransferFee) {
-            (uint256 rAmount , , , , , , ) = _getValues(tAmount);
+            (uint256 rAmount , , , , , ) = _getValues(tAmount);
             return rAmount;
         } else {
-            (,uint256 rTransferAmount , , , , , ) = _getValues(tAmount);
+            (,uint256 rTransferAmount , , , , ) = _getValues(tAmount);
             return rTransferAmount;
         }
     }
@@ -980,37 +980,34 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     }
 
     function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getTValues(tAmount);
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, tCharity,_getRate());
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity, tCharity);
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getTValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, _getRate());
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity);
     }
 
-    function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256) {
+    function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256) {
         uint256 tFee = calculateTaxFee(tAmount);
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
-        uint256 tCharity = calculateCharityFee(tAmount);
-        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity).sub(tCharity);
-        return (tTransferAmount, tFee, tLiquidity, tCharity);
+        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity);
+        return (tTransferAmount, tFee, tLiquidity);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
         uint256 rLiquidity = tLiquidity.mul(currentRate);
-        uint256 rCharity = tCharity.mul(currentRate);
-        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity).sub(rCharity);
+        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity);
         return (rAmount, rTransferAmount, rFee);
     }
     
@@ -1039,27 +1036,12 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
             _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
     }
 
-    function _takeCharity(uint256 tCharity) private {
-        if (tCharity > 0) {
-            uint256 currentRate = _getRate();
-            uint256 rCharity = tCharity.mul(currentRate);
-            _rOwned[CharityWallet] = _rOwned[CharityWallet].add(rCharity);
-            if (_isExcluded[CharityWallet])
-                _tOwned[CharityWallet] = _tOwned[CharityWallet].add(tCharity);
-            emit Transfer(_msgSender(), CharityWallet, tCharity);
-        }
-    }
-
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
         return _amount.mul(taxFee).div(10**2);
     }
 
     function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
         return _amount.mul(liquidityFee).div(10**2);
-    }
-
-    function calculateCharityFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(charityFee).div(10**2);
     }
 
     /**
@@ -1186,10 +1168,6 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
 
     function totalFees() external view returns (uint256) {
         return _tFeeTotal;
-    }
-
-    function Fees() external view returns (uint256, uint256, uint256, uint256, uint256) {
-        return (taxFee, liquidityFee, charityFee, devFee, burnFee);
     }
 
     function totalBurned() external view returns (uint256) {
@@ -1405,17 +1383,18 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         /**
          * @dev Calculate Development Amount && Burn Amount.
          */
+        uint256 charityAmt = amount.mul(charityFee).div(100);
         uint256 devAmt = amount.mul(devFee).div(100);
         uint256 burnAmt = amount.mul(burnFee).div(100);
         
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
-            _transferFromExcluded(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
+            _transferFromExcluded(sender, recipient, (amount.sub(charityAmt).sub(devAmt).sub(burnAmt)));
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferToExcluded(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
+            _transferToExcluded(sender, recipient, (amount.sub(charityAmt).sub(devAmt).sub(burnAmt)));
         } else if (_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferBothExcluded(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
+            _transferBothExcluded(sender, recipient, (amount.sub(charityAmt).sub(devAmt).sub(burnAmt)));
         } else {
-            _transferStandard(sender, recipient, (amount.sub(devAmt).sub(burnAmt)));
+            _transferStandard(sender, recipient, (amount.sub(charityAmt).sub(devAmt).sub(burnAmt)));
         }
         
         /**
@@ -1423,11 +1402,11 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
          */
         taxFee = 0;
         liquidityFee = 0;
-        charityFee = 0;
 
         /**
          * @dev Send transfers to Development Wallet and Burn Address.
          */
+        _transferStandard(sender, CharityWallet, charityAmt);
         _transferStandard(sender, DevelopmentWallet, devAmt);
         _transferStandard(sender, Burn_Address, burnAmt);
         
@@ -1437,41 +1416,37 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
          */
         taxFee = _previousTaxFee;
         liquidityFee = _previousLiquidityFee;
-        charityFee = _previousCharityFee;
 
         if(_isExcludedFromFee[sender] || _isExcludedFromFee[recipient])
             restoreAllFee();
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
