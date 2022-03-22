@@ -1481,7 +1481,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
      * or in the result of the swapAndLiquify function.
      * The Mexamy Team will allocate the recovered tokens for charity.
      */
-    function recoverTokens(address tokenAddress, uint256 tokenAmount) external onlyOwner nonReentrant {
+    function recoverTokens(address tokenAddress, uint256 tokenAmount) external nonReentrant onlyOwner {
         BEP20(tokenAddress).transfer(CharityWallet, tokenAmount);
         emit RecoverTokens(tokenAmount);
     }
