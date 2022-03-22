@@ -627,7 +627,7 @@ abstract contract Ownable is Context {
 /**
  * @dev Interface of PancakeSwap Factory.
  */
-interface PancakeSwapFactory {
+interface PancakeSwapV2Factory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
     function feeTo() external view returns (address);
@@ -646,7 +646,7 @@ interface PancakeSwapFactory {
 /**
  * @dev Interface of PancakeSwap Pair.
  */
-interface PancakeSwapPair {
+interface PancakeSwapV2Pair {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
@@ -693,7 +693,7 @@ interface PancakeSwapPair {
 /**
  * @dev Interface of Pancakeswap Router01.
  */
-interface PancakeSwapRouter01 {
+interface PancakeSwapV2Router01 {
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
 
@@ -732,7 +732,7 @@ interface PancakeSwapRouter01 {
 /**
  * @dev Interface of PancakeSwap Router02
  */
-interface PancakeSwapRouter02 is PancakeSwapRouter01 {
+interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline)
         external returns (uint amountETH);
     function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s)
@@ -793,8 +793,8 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 public maxBalance = 125e3 * 10**9; // 0.5% of total supply
     uint256 public numTokensSellToAddToLiquidity = 125e3 * 10**9; // 0.5% of total supply
 
-    PancakeSwapRouter02 public immutable pancakeswapRouter;
-    address public immutable pancakeswapPair;
+    PancakeSwapV2Router02 public immutable pancakeswapV2Router;
+    address public immutable pancakeswapv2Pair;
 
     bool inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = true;
@@ -828,18 +828,18 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     constructor () {
         _rOwned[_msgSender()] = _rTotal;
 
-        PancakeSwapRouter02 _pancakeswapRouter = PancakeSwapRouter02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        PancakeSwapV2Router02 _pancakeswapV2Router = PancakeSwapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
         /**
          * @dev Create a PancakeSwap Pair for this new token.
          */
-        pancakeswapPair = PancakeSwapFactory(_pancakeswapRouter.factory())
-        .createPair(address(this), _pancakeswapRouter.WETH());
+        pancakeswapv2Pair = PancakeSwapV2Factory(_pancakeswapV2Router.factory())
+        .createPair(address(this), _pancakeswapV2Router.WETH());
 
         /**
          * @dev Set the rest of the contract variables .
          */
-        pancakeswapRouter = _pancakeswapRouter;
+        pancakeswapV2Router = _pancakeswapV2Router;
 
         /**
          * @dev Exclude owner and this contract from Fee.
@@ -857,13 +857,13 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         _Whitelisted[address(CharityWallet)] = true;
         _Whitelisted[address(DevelopmentWallet)] = true;
         _Whitelisted[address(Burn_Address)] = true;
-        _Whitelisted[address(pancakeswapPair)] = true;
+        _Whitelisted[address(pancakeswapv2Pair)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
 
     /**
-     * @dev To receive BNB from PancakeSwapRouter02 when swapping.
+     * @dev To receive BNB from PancakeSwapV2Router02 when swapping.
      */
     receive() external payable {}
 
@@ -1283,7 +1283,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         uint256 contractTokenBalance = balanceOf(address(this));
         
         bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
-        if (overMinTokenBalance && !inSwapAndLiquify && from != pancakeswapPair && swapAndLiquifyEnabled) {
+        if (overMinTokenBalance && !inSwapAndLiquify && from != pancakeswapv2Pair && swapAndLiquifyEnabled) {
             contractTokenBalance = numTokensSellToAddToLiquidity;
             /*
              *@dev Add Liquidity.
@@ -1336,14 +1336,14 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
          */
         address[] memory path = new address[](2);
         path[0] = address(this);
-        path[1] = pancakeswapRouter.WETH();
+        path[1] = pancakeswapV2Router.WETH();
 
-        _approve(address(this), address(pancakeswapRouter), tokenAmount);
+        _approve(address(this), address(pancakeswapV2Router), tokenAmount);
 
         /*
          *@dev Make the swap.
          */
-        try pancakeswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        try pancakeswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
             tokenAmount,
             0, /* Accept any amount of BNB*/
             path,
@@ -1363,12 +1363,12 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         /*
          *@dev Approve token transfer to cover all possible scenarios.
          */
-        _approve(address(this), address(pancakeswapRouter), tokenAmount);
+        _approve(address(this), address(pancakeswapV2Router), tokenAmount);
 
         /*
          *@dev Add the liquidity.
          */
-        pancakeswapRouter.addLiquidityETH{value: bnbAmount}(
+        pancakeswapV2Router.addLiquidityETH{value: bnbAmount}(
             address(this),
             tokenAmount,
             0, // slippage is unavoidable
