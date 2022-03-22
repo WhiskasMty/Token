@@ -1013,7 +1013,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity).sub(rCharity);
         return (rAmount, rTransferAmount, rFee);
     }
-
+    
     function _getRate() private view returns(uint256) {
         (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
         return rSupply.div(tSupply);
@@ -1107,7 +1107,6 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         _previousDevFee = devFee;  
         burnFee = 0;
         _previousBurnFee = burnFee;
-        
         emit FeesEnabled(false);        
     }
 
