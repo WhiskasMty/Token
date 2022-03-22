@@ -1,2 +1,2 @@
-# test
-Token IERC20
+#MexaMy Token
+Token BEP20
