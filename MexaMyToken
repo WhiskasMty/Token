@@ -3,7 +3,7 @@
 pragma solidity 0.8.9;
 
 /**
- * @dev Interface of the BEP20
+ * @dev Interface of the BEP20.
  */
 interface BEP20 {
     /**
@@ -625,7 +625,7 @@ abstract contract Ownable is Context {
 }
 
 /**
- * @dev Interface of PancakeSwap Factory.
+ * @dev Interface of PancakeSwapV2 Factory.
  */
 interface PancakeSwapV2Factory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
@@ -644,7 +644,7 @@ interface PancakeSwapV2Factory {
 }
 
 /**
- * @dev Interface of PancakeSwap Pair.
+ * @dev Interface of PancakeSwapV2 Pair.
  */
 interface PancakeSwapV2Pair {
     event Approval(address indexed owner, address indexed spender, uint value);
@@ -691,7 +691,7 @@ interface PancakeSwapV2Pair {
 }
 
 /**
- * @dev Interface of Pancakeswap Router01.
+ * @dev Interface of PancakeSwapV2 Router01.
  */
 interface PancakeSwapV2Router01 {
     function factory() external pure returns (address);
@@ -730,7 +730,7 @@ interface PancakeSwapV2Router01 {
 }
 
 /**
- * @dev Interface of PancakeSwap Router02
+ * @dev Interface of PancakeSwapV2 Router02.
  */
 interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline)
@@ -744,7 +744,7 @@ interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
 }
 
 /**
- * @dev MexaMy Token Smart Sontract Implementation.
+ * @dev Implementation of the Smart Contract for the MexaMy token.
  */
 contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     using Address for address;
@@ -769,21 +769,21 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     string private constant _symbol   = "MXMY";
     uint256 private constant _decimals = 9;
 
-    uint256 public taxFee = 4;
+    uint256 private taxFee = 4;
     uint256 private _previousTaxFee = taxFee;
 
-    uint256 public liquidityFee = 1;
+    uint256 private liquidityFee = 1;
     uint256 private _previousLiquidityFee = liquidityFee;
 
-    uint256 public charityFee = 1;
+    uint256 private charityFee = 1;
     uint256 private _previousCharityFee = charityFee;
     address public CharityWallet = 0x4ef600B5353C7712D055C2d465A34E995654fDe1;
 
-    uint256 public devFee = 1;
+    uint256 private devFee = 1;
     uint256 private _previousDevFee = devFee;
     address public DevelopmentWallet = 0x507338357031cA783508c13A963C56D48217d2B0;
 
-    uint256 public burnFee = 2; 
+    uint256 private burnFee = 2; 
     uint256 private _previousBurnFee = burnFee;
     address public constant Burn_Address = 0x000000000000000000000000000000000000dEaD;
 
@@ -1104,8 +1104,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         charityFee = 0;
         _previousCharityFee = charityFee;
         devFee = 0;
-        _previousDevFee = devFee;
-        
+        _previousDevFee = devFee;  
         burnFee = 0;
         _previousBurnFee = burnFee;
         
@@ -1141,10 +1140,10 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     
     /**
      * @dev Set MaxBalance
-     * Requirements: New MaxBalance must be less than or equal to 0.05% of total supply
+     * Requirements: New MaxBalance must be less than or equal to 0.5% of total supply
      */
     function setMaxBalance(uint256 amount) external onlyOwner() {
-        require(amount <= _tTotal.mul(5).div(1000)); // 0.5% of total supply
+        require(amount > 0 && amount <= _tTotal.mul(5).div(1000)); // 0.5% of total supply
         maxBalance = amount;
         emit NewMaxBalance(amount);
     }
@@ -1186,8 +1185,12 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function totalFees() public view returns (uint256) {
+    function totalFees() external view returns (uint256) {
         return _tFeeTotal;
+    }
+
+    function Fees() external view returns (uint256, uint256, uint256, uint256, uint256) {
+        return (taxFee, liquidityFee, charityFee, devFee, burnFee);
     }
 
     function totalBurned() external view returns (uint256) {
