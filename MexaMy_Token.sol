@@ -746,7 +746,7 @@ interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
 /**
  * @dev Implementation of the Smart Contract for the MexaMy token.
  */
-contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
+contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
@@ -765,8 +765,8 @@ contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private constant _name = "TokenFX";
-    string private constant _symbol   = "TKFX";
+    string private constant _name = "MexaMy";
+    string private constant _symbol = "MXMY";
     uint256 private constant _decimals = 9;
 
     uint256 public taxFee = 4;
@@ -858,6 +858,11 @@ contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
         _Whitelisted[address(DevelopmentWallet)] = true;
         _Whitelisted[address(Burn_Address)] = true;
         _Whitelisted[address(pancakeswapv2Pair)] = true;
+
+        /**
+         * @dev Excluded from Reflection Token.
+         */
+        _isExcluded[address(Burn_Address)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
@@ -958,7 +963,7 @@ contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
         }
         _isExcluded[account] = true;
-        _excluded.push(account); //Burn_Adress:)
+        _excluded.push(account);
     }
 
     function includeInReward(address account) external onlyOwner() {
@@ -966,7 +971,7 @@ contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
                 _excluded[i] = _excluded[_excluded.length - 1];
-                _rOwned[account] = _tOwned[account].mul(_getRate()); //update _rOwned[account]
+                _rOwned[account] = _tOwned[account].mul(_getRate());
                 _tOwned[account] = 0;
                 _isExcluded[account] = false;
                 _excluded.pop();
@@ -1452,7 +1457,7 @@ contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Allow to recover any BEP20 sent into the contract for error
+     * @dev Allows to recover any token BEP20 sent into the contract for error
      * or in the result of the swapAndLiquify function.
      * The Mexamy Team will allocate the recovered tokens for charity.
      */
