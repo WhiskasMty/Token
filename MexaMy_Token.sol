@@ -958,7 +958,7 @@ contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
         }
         _isExcluded[account] = true;
-        _excluded.push(account);
+        _excluded.push(account); //Burn_Adress:)
     }
 
     function includeInReward(address account) external onlyOwner() {
