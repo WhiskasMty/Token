@@ -746,7 +746,7 @@ interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
 /**
  * @dev Implementation of the Smart Contract for the MexaMy token.
  */
-contract TokenF is BEP20, Context, Ownable, ReentrancyGuard {
+contract TokenFx is BEP20, Context, Ownable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
@@ -765,8 +765,8 @@ contract TokenF is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private constant _name = "TokenF";
-    string private constant _symbol   = "TKF";
+    string private constant _name = "TokenFX";
+    string private constant _symbol   = "TKFX";
     uint256 private constant _decimals = 9;
 
     uint256 public taxFee = 4;
@@ -1254,6 +1254,14 @@ contract TokenF is BEP20, Context, Ownable, ReentrancyGuard {
             require(balanceOf(to).add(amount) <= maxBalance, "Recipient exceeds MaxBalance");
         }
 
+        /**
+         * @dev Stop Burn tokens when maxTokensBurned is reached.
+         */
+        uint256 tokensBurned = balanceOf(address(Burn_Address));
+        if(tokensBurned >= maxTokensBurned) {
+            burnFee = 0;
+        }
+
         /* 
          *@dev Is the token balance of this contract address over the min number of
          * tokens that we need to initiate a swap + liquidity lock?
@@ -1370,14 +1378,6 @@ contract TokenF is BEP20, Context, Ownable, ReentrancyGuard {
     function _tokenTransfer(address sender, address recipient, uint256 amount) private {
         if(_isExcludedFromFee[sender] || _isExcludedFromFee[recipient]){
             removeAllFee();
-        }
-
-        /**
-         * @dev Stop Burn tokens when maxTokensBurned is reached.
-         */
-        uint256 tokensBurned = balanceOf(address(Burn_Address));
-        if(tokensBurned >= maxTokensBurned) {
-            burnFee = 0;
         }
         
         /**
