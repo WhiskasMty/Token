@@ -793,8 +793,8 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 public maxBalance = 125e3 * 10**9; // 0.5% of total supply
     uint256 public numTokensSellToAddToLiquidity = 125e3 * 10**9; // 0.5% of total supply
 
-    PancakeSwapV2Router02 public immutable pancakeswapV2Router;
-    address public immutable pancakeswapv2Pair;
+    PancakeSwapV2Router02 public pancakeswapV2Router;
+    address public pancakeswapV2Pair;
 
     bool inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = true;
@@ -833,7 +833,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         /**
          * @dev Create a PancakeSwap Pair for this new token.
          */
-        pancakeswapv2Pair = PancakeSwapV2Factory(_pancakeswapV2Router.factory())
+        pancakeswapV2Pair = PancakeSwapV2Factory(_pancakeswapV2Router.factory())
         .createPair(address(this), _pancakeswapV2Router.WETH());
 
         /**
@@ -857,7 +857,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         _Whitelisted[address(CharityWallet)] = true;
         _Whitelisted[address(DevelopmentWallet)] = true;
         _Whitelisted[address(Burn_Address)] = true;
-        _Whitelisted[address(pancakeswapv2Pair)] = true;
+        _Whitelisted[address(pancakeswapV2Pair)] = true;
 
         /**
          * @dev Excluded from Reflection Token.
@@ -1276,7 +1276,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         uint256 contractTokenBalance = balanceOf(address(this));
         
         bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
-        if (overMinTokenBalance && !inSwapAndLiquify && from != pancakeswapv2Pair && swapAndLiquifyEnabled) {
+        if (overMinTokenBalance && !inSwapAndLiquify && from != pancakeswapV2Pair && swapAndLiquifyEnabled) {
             contractTokenBalance = numTokensSellToAddToLiquidity;
             /*
              *@dev Add Liquidity.
@@ -1464,5 +1464,21 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     function recoverTokens(address tokenAddress, uint256 tokenAmount) external nonReentrant onlyOwner {
         BEP20(tokenAddress).transfer(CharityWallet, tokenAmount);
         emit RecoverTokens(tokenAmount);
+    }
+
+    /**
+     * @dev Update the Router address if PancakeSwap upgrades to a newer version.
+     */
+    function setRouterAddress(address newRouter) external onlyOwner {
+        PancakeSwapV2Router02 _newRouter = PancakeSwapV2Router02(newRouter);
+        address get_pair = PancakeSwapV2Factory(_newRouter.factory()).getPair(address(this), _newRouter.WETH());
+        //checks if pair already exists
+        if (get_pair == address(0)) {
+            pancakeswapV2Pair = PancakeSwapV2Factory(_newRouter.factory()).createPair(address(this), _newRouter.WETH());
+        }
+        else {
+            pancakeswapV2Pair = get_pair;
+        }
+            pancakeswapV2Router = _newRouter;
     }
 }
