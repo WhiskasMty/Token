@@ -757,7 +757,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     mapping(address => bool) private _isExcludedFromFee;
     mapping(address => bool) private _isExcluded;
     mapping(address => bool) private _Whitelisted;
-    mapping(address => bool) private _Blacklisted;
+    mapping(address => bool) private _Blacklisted; //Reserved for bot or malicious accounts.
     address[] private _excluded;
 
     uint256 private constant MAX = ~uint256(0);
@@ -779,7 +779,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _previousCharityFee = charityFee;
     address public CharityWallet = 0x4ef600B5353C7712D055C2d465A34E995654fDe1;
 
-    uint256 public devFee = 1;
+    uint256 public devFee = 1; //Development & Marketing
     uint256 private _previousDevFee = devFee;
     address public DevelopmentWallet = 0x507338357031cA783508c13A963C56D48217d2B0;
 
@@ -860,7 +860,7 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         _Whitelisted[address(pancakeswapV2Pair)] = true;
 
         /**
-         * @dev Excluded from Reflection Token.
+         * @dev Excluded from Rewards Token.
          */
         _isExcluded[address(Burn_Address)] = true;
 
@@ -1252,11 +1252,15 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         require(from != address(0), "BEP20: transfer from the zero address");
         require(to != address(0), "BEP20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(!_Blacklisted[to]);
-        require(!_Blacklisted[from]);
+        require(amount <= balanceOf(from), "Transfer amount exceeds your balance");
+        require(!_Blacklisted[to], "Sorry you can't receive tokens");
         if(!_Whitelisted[from] && !_Whitelisted[to]) {
-            require(amount <= maxTxAmount, "Transfer amount exceeds the MaxTxAmount.");
+            require(amount <= maxTxAmount, "Transfer amount exceeds MaxTxAmount");
             require(balanceOf(to).add(amount) <= maxBalance, "Recipient exceeds MaxBalance");
+        } else {
+            (_Blacklisted[from]); {
+                require(to == CharityWallet, "Sorry you can only send tokens to Charity Wallet");
+            } //If you are Blacklisted, contact the MexaMy Team to review your account and support in case of a possible appeal.
         }
 
         /**
