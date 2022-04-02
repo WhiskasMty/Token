@@ -1,3 +1,7 @@
+/**
+ *Submitted for verification at BscScan.com on 2022-04-02
+*/
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.9;
@@ -746,7 +750,7 @@ interface PancakeSwapV2Router02 is PancakeSwapV2Router01 {
 /**
  * @dev Implementation of the Smart Contract for the MexaMy token.
  */
-contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
+contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
@@ -765,8 +769,8 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private constant _name = "MexaMy";
-    string private constant _symbol = "MXMY";
+    string private constant _name = "prueba3";
+    string private constant _symbol = "pr3";
     uint256 private constant _decimals = 9;
 
     uint256 public taxFee = 4;
@@ -828,7 +832,8 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
     constructor () {
         _rOwned[_msgSender()] = _rTotal;
 
-        PancakeSwapV2Router02 _pancakeswapV2Router = PancakeSwapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        PancakeSwapV2Router02 _pancakeswapV2Router = PancakeSwapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
+        //0xD99D1c33F9fC3444f8101754aBC46c52416550D1 //tesnet
 
         /**
          * @dev Create a PancakeSwap Pair for this new token.
@@ -1252,11 +1257,11 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         require(from != address(0), "BEP20: transfer from the zero address");
         require(to != address(0), "BEP20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-	require(amount <= balanceOf(from), "Transfer amount exceeds your balance");
-        require(!_Blacklisted[to]);
-        require(!_Blacklisted[from]);
+        require(amount <= balanceOf(from), "Transfer amount exceeds your balance");
+        require(!_Blacklisted[to], "Sorry, you cannot send tokens to this address.");
+        require(!_Blacklisted[from], "Sorry, you cannot send tokens from this address.");
         if(!_Whitelisted[from] && !_Whitelisted[to]) {
-            require(amount <= maxTxAmount, "Transfer amount exceeds the MaxTxAmount.");
+            require(amount <= maxTxAmount, "Transfer amount exceeds MaxTxAmount.");
             require(balanceOf(to).add(amount) <= maxBalance, "Recipient exceeds MaxBalance");
         }
 
