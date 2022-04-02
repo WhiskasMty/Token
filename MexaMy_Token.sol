@@ -1252,15 +1252,12 @@ contract MexaMyToken is BEP20, Context, Ownable, ReentrancyGuard {
         require(from != address(0), "BEP20: transfer from the zero address");
         require(to != address(0), "BEP20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(amount <= balanceOf(from), "Transfer amount exceeds your balance");
-        require(!_Blacklisted[to], "Sorry you can't receive tokens");
+	require(amount <= balanceOf(from), "Transfer amount exceeds your balance");
+        require(!_Blacklisted[to]);
+        require(!_Blacklisted[from]);
         if(!_Whitelisted[from] && !_Whitelisted[to]) {
-            require(amount <= maxTxAmount, "Transfer amount exceeds MaxTxAmount");
+            require(amount <= maxTxAmount, "Transfer amount exceeds the MaxTxAmount.");
             require(balanceOf(to).add(amount) <= maxBalance, "Recipient exceeds MaxBalance");
-        } else {
-            (_Blacklisted[from]); {
-                require(to == CharityWallet, "Sorry you can only send tokens to Charity Wallet");
-            } //If you are Blacklisted, contact the MexaMy Team to review your account and support in case of a possible appeal.
         }
 
         /**
