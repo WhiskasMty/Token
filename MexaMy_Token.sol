@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at BscScan.com on 2022-04-02
-*/
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.9;
@@ -773,21 +769,21 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     string private constant _symbol = "pr3";
     uint256 private constant _decimals = 9;
 
-    uint256 public taxFee = 4;
+    uint256 private taxFee = 4;
     uint256 private _previousTaxFee = taxFee;
 
-    uint256 public liquidityFee = 1;
+    uint256 private liquidityFee = 1;
     uint256 private _previousLiquidityFee = liquidityFee;
 
-    uint256 public charityFee = 1;
+    uint256 private charityFee = 1;
     uint256 private _previousCharityFee = charityFee;
     address public CharityWallet = 0x4ef600B5353C7712D055C2d465A34E995654fDe1;
 
-    uint256 public devFee = 1; //Development & Marketing
+    uint256 private devFee = 1; //Development & Marketing
     uint256 private _previousDevFee = devFee;
     address public DevelopmentWallet = 0x507338357031cA783508c13A963C56D48217d2B0;
 
-    uint256 public burnFee = 2; 
+    uint256 private burnFee = 2; 
     uint256 private _previousBurnFee = burnFee;
     address public constant Burn_Address = 0x000000000000000000000000000000000000dEaD;
 
@@ -1175,6 +1171,10 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
         _rTotal = _rTotal.sub(rFee);
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
+    
+    function Fees() external view returns (uint256, uint256, uint256, uint256, uint256) {
+        return (taxFee, liquidityFee, burnFee, charityFee, devFee);
+    }
 
     function totalFees() external view returns (uint256) {
         return _tFeeTotal;
@@ -1263,14 +1263,6 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
         if(!_Whitelisted[from] && !_Whitelisted[to]) {
             require(amount <= maxTxAmount, "Transfer amount exceeds MaxTxAmount.");
             require(balanceOf(to).add(amount) <= maxBalance, "Recipient exceeds MaxBalance");
-        }
-
-        /**
-         * @dev Stop Burn tokens when maxTokensBurned is reached.
-         */
-        uint256 tokensBurned = balanceOf(address(Burn_Address));
-        if(tokensBurned >= maxTokensBurned) {
-            burnFee = 0;
         }
 
         /* 
@@ -1389,6 +1381,14 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     function _tokenTransfer(address sender, address recipient, uint256 amount) private {
         if(_isExcludedFromFee[sender] || _isExcludedFromFee[recipient]){
             removeAllFee();
+        }
+
+        /**
+         * @dev Stop Burn tokens when maxTokensBurned is reached.
+         */
+        uint256 tokensBurned = balanceOf(address(Burn_Address));
+        if(tokensBurned >= maxTokensBurned) {
+            burnFee = 0;
         }
         
         /**
