@@ -783,7 +783,7 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     uint256 private _previousDevFee = devFee;
     address public DevelopmentWallet = 0x507338357031cA783508c13A963C56D48217d2B0;
 
-    uint256 public burnFee = 2; 
+    uint256 public burnFee = 3; 
     uint256 private _previousBurnFee = burnFee;
     address public constant Burn_Address = 0x000000000000000000000000000000000000dEaD;
 
@@ -859,11 +859,6 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
         _Whitelisted[address(DevelopmentWallet)] = true;
         _Whitelisted[address(Burn_Address)] = true;
         _Whitelisted[address(pancakeswapV2Pair)] = true;
-
-        /**
-         * @dev Excluded from Rewards Token.
-         */
-        _isExcluded[address(Burn_Address)] = true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
@@ -1064,6 +1059,12 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     }
 
     function removeAllFee() private {
+        _previousTaxFee = taxFee;
+        _previousLiquidityFee = liquidityFee;
+        _previousCharityFee = charityFee;
+        _previousDevFee = devFee;
+        _previousBurnFee = burnFee;
+
         taxFee = 0;
         liquidityFee = 0;
         charityFee = 0;
@@ -1072,46 +1073,11 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     }
     
     function restoreAllFee() private {
-        taxFee = 4;
-        liquidityFee = 1;
-        charityFee = 1;
-        devFee = 1;
-        burnFee = 2;
-    }
-
-    /**
-     * @dev Call this function to disable all Fees.
-     * It will be necessary during the Presale stage.
-     */
-    function disableAllFees() external onlyOwner() {
-        taxFee = 0;
-        _previousTaxFee = taxFee;
-        liquidityFee = 0;
-        _previousLiquidityFee = liquidityFee;
-        charityFee = 0;
-        _previousCharityFee = charityFee;
-        devFee = 0;
-        _previousDevFee = devFee;  
-        burnFee = 0;
-        _previousBurnFee = burnFee;
-        emit FeesEnabled(false);        
-    }
-
-    /**
-     * @dev Call this function to enable Fees after finalizing the Presale.
-     */
-    function enableAllFees() external onlyOwner() {
-        taxFee = 4;
-        _previousTaxFee = taxFee;
-        liquidityFee = 1;
-        _previousLiquidityFee = liquidityFee;
-        devFee = 1;
-        _previousDevFee = devFee;
-        charityFee = 1;
-        _previousCharityFee = charityFee;
-        burnFee = 2;
-        _previousBurnFee = burnFee;
-        emit FeesEnabled(true);
+        taxFee = _previousTaxFee;
+        liquidityFee = _previousLiquidityFee;
+        charityFee = _previousCharityFee;
+        devFee = _previousDevFee;
+        burnFee = _previousBurnFee;
     }
 
     /**
@@ -1225,6 +1191,7 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     function addToBlacklist(address account) external onlyOwner {
         _Blacklisted[account] = true;
         _isExcluded[account] = true;
+        _excluded.push(account);
         emit BlacklistedUpdated(account, true);
     }
 
@@ -1235,6 +1202,7 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
     function removeToBlacklist(address account) external onlyOwner {
         _Blacklisted[account] = false;
         _isExcluded[account] = false;
+        _excluded.push(account);
         emit BlacklistedUpdated(account, false);
     }
 
@@ -1386,6 +1354,9 @@ contract pruebasmx is BEP20, Context, Ownable, ReentrancyGuard {
         uint256 tokensBurned = balanceOf(address(Burn_Address));
         if(tokensBurned >= maxTokensBurned) {
             burnFee = 0;
+            taxFee = 3;
+            _isExcluded[address(Burn_Address)] = true;
+            _excluded.push(address( Burn_Address));
         }
         
         /**
